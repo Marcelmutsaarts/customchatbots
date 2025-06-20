@@ -1,12 +1,7 @@
-// @ts-nocheck
 import { notFound } from 'next/navigation'
 import ChatInterface from '@/components/ChatInterface'
 
-type Props = {
-  params: Promise<{ id: string }>
-}
-
-async function getChatConfig(id: string) {
+async function getChatConfig(id) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/chat/${id}`, {
       cache: 'no-store'
@@ -23,7 +18,7 @@ async function getChatConfig(id: string) {
   }
 }
 
-export default async function SharedChatPage({ params }: Props) {
+export default async function SharedChatPage({ params }) {
   const { id } = await params
   
   const config = await getChatConfig(id)
