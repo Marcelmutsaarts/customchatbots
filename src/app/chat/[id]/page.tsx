@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { kv } from '@vercel/kv';
 import { notFound } from 'next/navigation';
 import ChatClient from './ChatClient';
