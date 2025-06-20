@@ -2,6 +2,10 @@ import { kv } from '@vercel/kv';
 import { notFound } from 'next/navigation';
 import ChatClient from './ChatClient';
 
+type PageProps = {
+  params: { id: string };
+};
+
 type ChatConfig = {
   vakkennis: string;
   vakdidaktiek: string;
@@ -18,7 +22,7 @@ async function getChatConfig(id: string): Promise<ChatConfig | null> {
   }
 }
 
-export default async function SharedChatPage({ params }: { params: { id: string } }) {
+export default async function SharedChatPage({ params }: PageProps) {
   const config = await getChatConfig(params.id);
 
   if (!config) {
