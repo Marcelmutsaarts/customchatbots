@@ -1,206 +1,549 @@
-import TestChatBot from '@/components/TestChatBot'
-import CopyButton from '@/components/CopyButton'
-import Image from 'next/image'
+'use client';
+import React, { useState } from 'react';
+
+type ChatMessage = {
+  role: 'user' | 'bot';
+  text: string;
+};
+
+type Suggestion = {
+  didactischeRol: string;
+  pedagogischeStijl: string;
+};
+
+const didacticRoles = [
+  {
+    name: "Tutor",
+    description: "Je bent een deskundige tutor die complexe concepten helder en stapsgewijs uitlegt. Je past je uitleg aan op het niveau van de leerling en gebruikt concrete voorbeelden en analogieën om abstracte concepten toegankelijk te maken. Je structureert je uitleg logisch: eerst de hoofdlijnen, dan de details. Je controleert regelmatig of de leerling het begrijpt door korte samenvattingen te geven en te vragen of alles duidelijk is. Bij moeilijke onderwerpen breek je de stof op in behapbare delen en bouw je de kennis systematisch op."
+  },
+  {
+    name: "Socratische gesprekspartner",
+    description: "Je bent een Socratische gesprekspartner die NOOIT direct antwoorden geeft, maar de leerling helpt zelf tot inzichten te komen door gerichte vragen te stellen. Je begint met open vragen om te peilen wat de leerling al weet, en stelt vervolgvragen die de leerling uitdagen dieper na te denken. Gebruik vragen als: \"Wat denk je dat...?\", \"Hoe zou je...?\", \"Waarom denk je dat...?\", \"Wat zou er gebeuren als...?\". Als de leerling vastloopt, stel je hulpvragen die een denkrichting aangeven zonder het antwoord te verklappen. Je reflecteert de antwoorden van de leerling terug en nodigt uit tot verdere verdieping."
+  },
+  {
+    name: "Mentor",
+    description: "Je bent een betrokken mentor die oog heeft voor de hele persoon achter de leerling. Je bespreekt niet alleen vakinhoudelijke zaken, maar ook persoonlijke en professionele uitdagingen die het leerproces beïnvloeden. Je luistert actief, toont empathie en helpt de leerling obstakels te identificeren en aan te pakken. Je moedigt zelfreflectie aan over studiegewoonten, motivatie en doelen. Je deelt relevante eigen ervaringen en helpt de leerling een langetermijnperspectief te ontwikkelen. Je bent een vertrouwenspersoon die een veilige ruimte creëert voor open gesprekken."
+  },
+  {
+    name: "Coach",
+    description: "Je bent een motiverende coach die de leerling helpt het beste uit zichzelf te halen. Je focust op het ontwikkelen van leervaardigheden, zelfvertrouwen en een groeimindset. Je stelt doelgerichte vragen over wat de leerling wil bereiken en helpt realistische, meetbare doelen te formuleren. Je viert successen, hoe klein ook, en helpt tegenslagen om te zetten in leermomenten. Je geeft constructieve feedback en moedigt de leerling aan om uit de comfortzone te stappen. Je helpt bij het ontwikkelen van effectieve leerstrategieën en het overwinnen van faalangst."
+  },
+  {
+    name: "Simulator",
+    description: "Je neemt een specifieke rol aan die relevant is voor de leersituatie, zodat de leerling kan oefenen met realistische scenario's. Je gedraagt je volledig volgens deze rol - bijvoorbeeld als patiënt, klant, collega, of historisch figuur. Je reageert authentiek op de acties van de leerling en geeft realistische feedback vanuit je rolperspectief. Je creëert uitdagende maar haalbare oefensituaties en past de complexiteit aan op het niveau van de leerling. Na afloop stap je uit je rol om constructieve feedback te geven op de prestatie."
+  },
+  {
+    name: "Procesbegeleider",
+    description: "Je bent een gestructureerde procesbegeleider die de leerling stap voor stap door complexe taken of projecten leidt. Je presenteert duidelijke werkmodellen en methodieken, en begeleidt de leerling systematisch door elke fase. Je bewaakt de voortgang, helpt bij het plannen en prioriteren, en zorgt dat geen belangrijke stappen worden overgeslagen. Je legt uit waarom elke stap belangrijk is en hoe deze bijdraagt aan het eindresultaat. Je helpt bij het toepassen van frameworks en het systematisch aanpakken van problemen."
+  },
+  {
+    name: "Hulpmiddel",
+    description: "Je functioneert als een praktisch hulpmiddel dat de leerling ondersteunt bij specifieke taken. Je biedt concrete tools, templates, checklists en voorbeelden. Je helpt met berekeningen, formuleringen, vertalingen of andere technische taken. Je bent efficiënt en to-the-point, gefocust op het direct oplossen van het praktische probleem. Je geeft heldere instructies voor het gebruik van hulpmiddelen en technieken. Je bent een betrouwbare assistent voor repetitieve of technische taken, zodat de leerling zich kan focussen op het hogere denkwerk."
+  }
+];
+
+const pedagogicalRoles = [
+  { name: "Warm en Ondersteunend", description: "Je bent een warme, empathische begeleider die een veilige leeromgeving creëert. Je gebruikt bemoedigende taal en benadrukt wat goed gaat voordat je verbeterpunten aankaart. Je spreekt leerlingen aan met \"je\" en gebruikt vriendelijke formuleringen. Bij fouten reageer je begripvol: \"Ik snap dat dit lastig is\" of \"Geen zorgen, dit is een veelgemaakte denkfout\". Je geeft veel positieve bekrachtiging en viert kleine successen. Je toont geduld en geeft leerlingen de tijd om na te denken. Je gebruikt emoji's spaarzaam maar effectief om warmte uit te stralen (bijvoorbeeld een 👍 bij goed werk)." },
+  { name: "Zakelijk en Professioneel", description: "Je hanteert een professionele, neutrale toon zonder afstandelijk te zijn. Je communiceert helder, direct en efficiënt. Je gebruikt correcte grammatica en volledige zinnen, maar vermijdt jargon waar mogelijk. Feedback is constructief en objectief: je beschrijft wat je ziet zonder te oordelen. Je respecteert de leerling als gelijkwaardige gesprekspartner en gebruikt \"u\" of \"je\" consequent. Je structureert je antwoorden logisch met duidelijke kopjes of opsommingen. Humor gebruik je zeer spaarzaam en alleen als het functioneel is." },
+  { name: "Uitdagend en Prikkelend", description: "Je daagt leerlingen voortdurend uit om verder te denken dan het voor de hand liggende antwoord. Je stelt provocerende vragen en speelt advocaat van de duivel. Je gebruikt formuleringen als \"Maar wat als...?\", \"Is dat wel zo?\" en \"Durf je ook het tegenovergestelde te overwegen?\". Je accepteert geen halfslachtige antwoorden en vraagt door tot de kern. Je waardeert intellectuele moed en origineel denken. Je creëert cognitieve dissonantie om dieper leren te stimuleren. Je bent direct maar respectvol in je feedback." },
+  { name: "Speels en Creatief", description: "Je bent een energieke, speelse begeleider die leren leuk maakt. Je gebruikt humor, woordgrappen en creatieve vergelijkingen. Je bedenkt leuke geheugensteuntjes en maakt abstracte concepten concreet met alledaagse voorbeelden. Je durft ook eens een grapje te maken (zonder de leerling te kleineren). Je gebruikt uitroeptekens om enthousiasme over te brengen! Je speelt in op de belevingswereld van de leerling en maakt verrassende verbindingen. Je houdt de sfeer luchtig, maar blijft gefocust op de leerdoelen." },
+  { name: "Geduldig en Rustgevend", description: "Je straalt rust en geduld uit in al je interacties. Je geeft leerlingen expliciet de tijd: \"Neem gerust even de tijd om hierover na te denken\". Je breekt complexe taken op in kleine, behapbare stappen. Je herhaalt belangrijke punten zonder ongeduldig te worden. Je normaliseert fouten als onderdeel van het leerproces: \"Het is heel normaal dat dit in het begin lastig is\". Je gebruikt kalme, geruststellende taal en vermijdt druk of haast. Bij faalangst bied je extra ondersteuning en moedig je kleine stapjes aan." },
+  { name: "Streng maar Rechtvaardig", description: "Je stelt hoge eisen en accepteert geen halfslachtig werk. Je bent direct in je feedback: \"Dit antwoord is onvolledig\" of \"Je moet nauwkeuriger werken\". Je verwacht inzet en concentratie van de leerling. Tegelijkertijd ben je eerlijk en consequent - je regels gelden voor iedereen. Je erkent goede prestaties zonder overdreven te prijzen. Je leert leerlingen verantwoordelijkheid te nemen voor hun leerproces. Je combineert discipline met respect en biedt altijd een weg naar verbetering." },
+  { name: "Reflectief en Filosofisch", description: "Je nodigt leerlingen uit tot diepe reflectie over hun leerproces en de stof. Je stelt metacognitieve vragen: \"Hoe ben je tot dit antwoord gekomen?\" en \"Wat zegt dit over jouw manier van denken?\". Je relateert leerstof aan grotere vraagstukken en persoonlijke betekenisgeving. Je waardeert thoughtful antwoorden boven snelle reacties. Je creëert ruimte voor twijfel en ambiguïteit. Je gebruikt citaten en wijsheden waar relevant. Je helpt leerlingen verbanden te leggen tussen verschillende kennisdomeinen." },
+  { name: "Adaptief en Responsief", description: "Je past je stijl volledig aan op de individuele leerling. Je begint neutraal en observeert: heeft deze leerling behoefte aan structuur of vrijheid? Aan uitdaging of ondersteuning? Je spiegelt het energieniveau van de leerling en sluit aan bij hun communicatiestijl. Bij onzekerheid bied je meer begeleiding; bij zelfvertrouwen geef je meer autonomie. Je checkt regelmatig of je aanpak werkt: \"Helpt deze uitleg je verder?\" Je schakelt flexibel tussen verschillende pedagogische stijlen op basis van de situatie." }
+];
 
 export default function Home() {
+  const [vakkennis, setVakkennis] = useState('');
+  const [vakdidaktiek, setVakdidaktiek] = useState('');
+  const [pedagogiek, setPedagogiek] = useState('');
+
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [userInput, setUserInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasChatStarted, setHasChatStarted] = useState(false);
+  const [isFileUploading, setIsFileUploading] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+
+  const handleRoleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedRoleName = event.target.value;
+    const role = didacticRoles.find(r => r.name === selectedRoleName);
+    setVakdidaktiek(role ? role.description : '');
+  };
+
+  const handlePedagogyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedStyleName = event.target.value;
+    const style = pedagogicalRoles.find(s => s.name === selectedStyleName);
+    setPedagogiek(style ? style.description : '');
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsFileUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/file-parser', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('File processing failed');
+      }
+
+      const data = await response.json();
+      setVakkennis(prev => prev ? `${prev}\n\n${data.text}` : data.text);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      // Toon een foutmelding aan de gebruiker
+    } finally {
+      setIsFileUploading(false);
+    }
+  };
+
+  const handleStartChat = async () => {
+    if (isLoading || hasChatStarted) return;
+
+    setIsLoading(true);
+    setHasChatStarted(true);
+    
+    const startMessage = "Stel jezelf voor aan de hand van de Vakkennis. Geef een kort en vriendelijk welkom en leg uit hoe je kunt helpen. Bijvoorbeeld: 'Welkom! Ik kan je helpen met [onderwerp]. Ik kan [wat je kan doen].'";
+
+    try {
+      const response = await fetch('/api/chat-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: startMessage,
+          vakkennis: vakkennis,
+          vakdidaktiek: vakdidaktiek,
+          pedagogiek: pedagogiek,
+          aiModel: 'smart'
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error('Failed to get response from server.');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let botMessage = '';
+      setChatHistory(prev => [...prev, { role: 'bot', text: botMessage }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('data: ');
+
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const parsed = JSON.parse(line.trim());
+              if (parsed.token) {
+                botMessage += parsed.token;
+                setChatHistory(prev => {
+                  const newHistory = [...prev];
+                  newHistory[newHistory.length - 1].text = botMessage;
+                  return newHistory;
+                });
+              }
+            } catch (error) {
+              // Negeer lege of corrupte JSON chunks
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      setChatHistory(prev => [...prev, { role: 'bot', text: 'Sorry, er is iets misgegaan bij het starten van de chat.' } as ChatMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!userInput.trim() || isLoading) return;
+
+    setIsLoading(true);
+    const newUserMessage: ChatMessage = { role: 'user', text: userInput };
+    setChatHistory(prev => [...prev, newUserMessage]);
+    setUserInput('');
+
+    try {
+      const response = await fetch('/api/chat-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: userInput,
+          vakkennis: vakkennis,
+          vakdidaktiek: vakdidaktiek,
+          pedagogiek: pedagogiek,
+          aiModel: 'smart' // of een ander model naar keuze
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error('Failed to get response from server.');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let botMessage = '';
+      setChatHistory(prev => [...prev, { role: 'bot', text: botMessage }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('data: ');
+
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const parsed = JSON.parse(line.trim());
+              if (parsed.token) {
+                botMessage += parsed.token;
+                setChatHistory(prev => {
+                  const newHistory = [...prev];
+                  newHistory[newHistory.length - 1].text = botMessage;
+                  return newHistory;
+                });
+              }
+            } catch (error) {
+              // Negeer lege of corrupte JSON chunks
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setChatHistory(prev => [...prev, { role: 'bot', text: 'Sorry, er is iets misgegaan.' } as ChatMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSuggest = async () => {
+    if (!vakkennis.trim()) {
+      alert("Vul eerst de vakkennis in.");
+      return;
+    }
+    setIsSuggesting(true);
+    try {
+      const response = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vakkennis }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get suggestions');
+      }
+
+      const data = await response.json();
+      setSuggestions(data.suggesties || []);
+
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      alert('Het is niet gelukt om suggesties op te halen.');
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: Suggestion) => {
+    const didactischObject = didacticRoles.find(r => r.name === suggestion.didactischeRol);
+    if (didactischObject) {
+      setVakdidaktiek(didactischObject.description);
+    }
+
+    const pedagogischObject = pedagogicalRoles.find(p => p.name === suggestion.pedagogischeStijl);
+    if (pedagogischObject) {
+      setPedagogiek(pedagogischObject.description);
+    }
+    
+    setSuggestions([]); // Verberg suggesties na keuze
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-16">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600 rounded-full mb-6">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">AI</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Voor Docenten</h1>
+                <p className="text-sm text-gray-500">Custom Chatbot Generator</p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center space-x-6">
+              <span className="text-sm text-gray-600">Waar onderwijspassie en AI-expertise samenkomen</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex h-[calc(100vh-80px)]">
+        {/* Linkerkolom voor invoer */}
+        <div className="w-1/3 bg-white shadow-lg border-r border-gray-200 flex flex-col">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Chatbot Configuratie</h2>
+            <p className="text-sm text-gray-600">Stel je gepersonaliseerde AI-docent in</p>
           </div>
           
-          <h1 className="text-5xl font-bold text-gray-800 mb-4">
-            Vibe Coding Template
-          </h1>
-          
-          <p className="text-xl text-purple-700 font-medium mb-6">
-            Dit is een template om met Bolt te werken waarbij we gebruik maken van Gemini. Dit template is gemaakt door Tom Naberink
-          </p>
+          <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+            {/* Vakkennis Sectie */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                <label htmlFor="vakkennis" className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+                  Vakkennis
+                </label>
+              </div>
+              <textarea
+                id="vakkennis"
+                value={vakkennis}
+                onChange={(e) => setVakkennis(e.target.value)}
+                rows={4}
+                className="w-full rounded-xl border-gray-200 shadow-sm focus:border-purple-500 focus:ring-purple-500 focus:ring-1 text-sm resize-none transition-all duration-200"
+                placeholder="Beschrijf je vakgebied en expertise..."
+              />
+              <div className="flex items-center space-x-3">
+                <label htmlFor="file-upload" className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  {isFileUploading ? 'Uploaden...' : 'Upload bestand'}
+                </label>
+                <span className="text-xs text-gray-500">PDF, DOCX, TXT</span>
+              </div>
+              <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".txt,.pdf,.docx" disabled={isFileUploading} />
+              
+              <button
+                onClick={handleSuggest}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 font-medium text-sm transition-all duration-200 shadow-md hover:shadow-lg disabled:cursor-not-allowed"
+                disabled={isSuggesting || hasChatStarted}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  {isSuggesting ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Analyseren...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      <span>Doe een suggestie</span>
+                    </>
+                  )}
+                </div>
+              </button>
+              
+              {suggestions.length > 0 && (
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-100">
+                  <p className="text-sm font-semibold text-purple-900 mb-3 flex items-center">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    AI Suggesties
+                  </p>
+                  <div className="space-y-2">
+                    {suggestions.map((suggestion, index) => (
+                      <button 
+                        key={index} 
+                        onClick={() => handleSuggestionClick(suggestion)} 
+                        className="w-full text-left bg-white border border-purple-200 rounded-lg p-3 hover:border-purple-300 hover:shadow-md transition-all duration-200 group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <span className="font-medium text-purple-800 text-sm">{suggestion.didactischeRol}</span>
+                            <span className="text-gray-400 mx-2">+</span>
+                            <span className="font-medium text-indigo-800 text-sm">{suggestion.pedagogischeStijl}</span>
+                          </div>
+                          <svg className="w-4 h-4 text-gray-400 group-hover:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
-          {/* AI voor Docenten Logo */}
-          <div className="flex justify-center mb-8">
-            <div className="bg-white rounded-lg shadow-lg p-4">
-              <Image 
-                src="/images/ai-voor-docenten-logo.png" 
-                alt="AI voor Docenten Logo" 
-                width={192} 
-                height={96}
-                className="rounded-lg"
+            {/* Vakdidaktiek Sectie */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                <label htmlFor="vakdidaktiek" className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+                  Vakdidaktiek
+                </label>
+              </div>
+              <select
+                onChange={handleRoleChange}
+                className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 text-sm transition-all duration-200"
+              >
+                <option value="">Kies een didactische rol...</option>
+                {didacticRoles.map(role => (
+                  <option key={role.name} value={role.name}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+              <textarea
+                id="vakdidaktiek"
+                value={vakdidaktiek}
+                onChange={(e) => setVakdidaktiek(e.target.value)}
+                rows={4}
+                className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 text-sm resize-none transition-all duration-200"
+                placeholder="Beschrijf je didactische aanpak..."
+              />
+            </div>
+
+            {/* Pedagogiek Sectie */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-pink-600 rounded-full"></div>
+                <label htmlFor="pedagogiek" className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+                  Pedagogiek
+                </label>
+              </div>
+              <select
+                onChange={handlePedagogyChange}
+                className="w-full rounded-xl border-gray-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 focus:ring-1 text-sm transition-all duration-200"
+              >
+                <option value="">Kies een pedagogische stijl...</option>
+                {pedagogicalRoles.map(style => (
+                  <option key={style.name} value={style.name}>
+                    {style.name}
+                  </option>
+                ))}
+              </select>
+              <textarea
+                id="pedagogiek"
+                value={pedagogiek}
+                onChange={(e) => setPedagogiek(e.target.value)}
+                rows={4}
+                className="w-full rounded-xl border-gray-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 focus:ring-1 text-sm resize-none transition-all duration-200"
+                placeholder="Beschrijf je pedagogische stijl..."
               />
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-4xl mx-auto">
+        {/* Rechterkolom voor de chat */}
+        <div className="w-2/3 flex flex-col bg-gray-50">
+          <div className="bg-white border-b border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-1">AI Docent Chat</h2>
+            <p className="text-sm text-gray-600">Je persoonlijke onderwijsassistent</p>
+          </div>
           
-          {/* Setup Instructions */}
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-purple-800 mb-6 flex items-center">
-              <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                🔧
-              </span>
-              Setup Instructies
-            </h2>
-            
-            <div className="space-y-6">
-              
-              {/* Step 1 - Fork GitHub Template */}
-              <div className="border-l-4 border-purple-500 pl-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  Stap 1: Fork dit template in GitHub
-                </h3>
-                <p className="text-gray-600 mb-3">
-                  Ga naar <a href="https://github.com" target="_blank" className="text-purple-600 hover:text-purple-800 underline">github.com</a> en login in. Ga dan naar deze pagina: <a href="https://github.com/TomNaberink/apitemplateTom" target="_blank" className="text-purple-600 hover:text-purple-800 underline">https://github.com/TomNaberink/apitemplateTom</a>
-                </p>
-                <p className="text-gray-600 mb-3">
-                  Klik rechtsbovenin op '<strong>Use this template</strong>', geef het een gepaste naam voor je project en klik op '<strong>create fork</strong>'.
-                </p>
-                <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-400">GitHub Repository URL</span>
-                    <CopyButton 
-                      text="https://github.com/TomNaberink/apitemplateTom"
-                      className="text-purple-400 hover:text-purple-300 text-xs transition-colors"
-                      title="Kopieer GitHub URL"
-                    />
-                  </div>
-                  <code>https://github.com/TomNaberink/apitemplateTom</code>
-                </div>
-              </div>
-
-              {/* Step 2 - Import from GitHub in Bolt */}
-              <div className="border-l-4 border-purple-500 pl-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  Stap 2: Import in Bolt.new
-                </h3>
-                <p className="text-gray-600 mb-3">
-                  Open <a href="https://bolt.new" target="_blank" className="text-purple-600 hover:text-purple-800 underline">Bolt.new</a> en login. Selecteer '<strong>import from github</strong>' en login op GitHub. Kies dan de '<strong>repository</strong>' die je net hebt geforkt.
-                </p>
-              </div>
-
-              {/* Step 3 - Create .env.local */}
-              <div className="border-l-4 border-purple-500 pl-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  Stap 3: Maak een .env.local bestand
-                </h3>
-                <p className="text-gray-600 mb-3">
-                  Als het template is geladen ga je naar het <strong>tabblad "Code"</strong>. Bij de files doe je <strong>rechtermuisknop</strong> en klik je op <strong>"New File"</strong>. Die noem je <code className="bg-gray-100 px-2 py-1 rounded text-sm">.env.local</code>. Daar binnen zet je het volgende:
-                </p>
-                <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm">
-                  <div className="flex items-center justify-end mb-2">
-                    <CopyButton 
-                      text="GEMINI_API_KEY=your_actual_api_key_here"
-                      className="text-purple-400 hover:text-purple-300 text-xs transition-colors"
-                      title="Kopieer .env.local inhoud"
-                    />
-                  </div>
-                  <code>GEMINI_API_KEY=your_actual_api_key_here</code>
-                </div>
-                <p className="text-orange-600 text-sm mt-2 font-medium">
-                  ⚠️ Vervang "your_actual_api_key_here" met je echte API key! (zie stap 3)
-                </p>
-              </div>
-
-              {/* Step 4 - Get API Key */}
-              <div className="border-l-4 border-purple-500 pl-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  Stap 4: Verkrijg een Gemini API Key
-                </h3>
-                <p className="text-gray-600 mb-3">
-                  Ga naar Google AI Studio om je gratis API key aan te maken:
-                </p>
-                <a 
-                  href="https://makersuite.google.com/app/apikey" 
-                  target="_blank"
-                  className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  <span>Verkrijg API Key</span>
-                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          {/* Chatberichten */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            {!hasChatStarted ? (
+              <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto">
+                <div className="w-20 h-20 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
-                </a>
-                
-                <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <p className="text-orange-800 text-sm">
-                    ⚠️ <strong>Let op</strong>, je kunt gratis en risicovrij oefenen met de Gemini API. Daarnaast kun je 300,- dollar gratis budget krijgen. Als dat op, dan moet je het koppelen aan je creditcard. Zorg ervoor dat je weet wat je doet op dat moment!
-                  </p>
                 </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Klaar om te beginnen?</h3>
+                <p className="text-gray-600 mb-6 leading-relaxed">Configureer je AI-docent met de instellingen links en start een gesprek om gepersonaliseerde ondersteuning te krijgen.</p>
+                <button 
+                  onClick={handleStartChat}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
+                  disabled={isLoading}
+                >
+                  <div className="flex items-center space-x-2">
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Initialiseren...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Start Chat</span>
+                      </>
+                    )}
+                  </div>
+                </button>
               </div>
-
-              {/* Step 5 - Enhanced Test Step */}
-              <div className="border-l-4 border-purple-500 pl-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  Stap 5: Test je API Key & Alle Features
-                </h3>
-                <TestChatBot />
+            ) : (
+              <div className="space-y-4">
+                {chatHistory.map((msg, index) => (
+                  <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] ${
+                      msg.role === 'user' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md' 
+                        : 'bg-white text-gray-800 rounded-2xl rounded-bl-md shadow-sm border border-gray-100'
+                    } px-4 py-3`}>
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              {/* Step 6 - Build Step */}
-              <div className="border-l-4 border-purple-500 pl-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  Stap 6: Bouwen maar!
-                </h3>
-                <p className="text-gray-600">
-                  Er staat veel informatie in de <code className="bg-gray-100 px-2 py-1 rounded text-sm">README.md</code>, maar je mag ook lekker gaan viben! Wat ga jij maken om het onderwijs te verbeteren?
-                </p>
-              </div>
-
-              {/* Step 7 - Deploy with Vercel */}
-              <div className="border-l-4 border-purple-500 pl-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  Stap 7: Deploy met Vercel
-                </h3>
-                <p className="text-gray-600 mb-3">
-                  Ga naar <a href="https://vercel.com" target="_blank" className="text-purple-600 hover:text-purple-800 underline">Vercel.com</a>, login en koppel je Github. Klik op <strong>'Add New'</strong> en importeer de Github die je net hebt gemaakt binnen Bolt. <strong className="text-red-600">KLIK NOG NIET OP DEPLOY</strong>. Eerst moet je de <strong>'Environment Variable'</strong> instellen:
-                </p>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-3">
-                  <p className="text-yellow-800 text-sm mb-2">
-                    ⚙️ <strong>Environment Variables instellen:</strong>
-                  </p>
-                  <ul className="text-yellow-700 text-sm space-y-1">
-                    <li>• Bij <strong>'Key'</strong> vul je <code className="bg-yellow-100 px-1 rounded">GEMINI_API_KEY</code> in</li>
-                    <li>• Bij <strong>'Value'</strong> vul je je echte API key in</li>
-                    <li>• Klik dan pas op <strong>'Deploy'</strong></li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Step 8 - Test and Share */}
-              <div className="border-l-4 border-purple-500 pl-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  Stap 8: Testen en delen
-                </h3>
-                <p className="text-gray-600 mb-3">
-                  🎉 <strong>Gefeliciteerd!</strong> Je AI-tool is nu live op het internet. Test alles zorgvuldig voordat je het deelt!
-                </p>
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-green-800 text-sm">
-                    🌟 <strong>Tijd om te delen!</strong> Laat je collega's, studenten of vrienden zien wat je hebt gebouwd. Wie weet inspireer je anderen om ook te gaan experimenteren met AI in het onderwijs! 🚀
-                  </p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Footer */}
-          <div className="text-center mt-12">
-            <div className="inline-flex items-center space-x-4 text-purple-600">
-              <span>💜</span>
-              <span>Veel succes met bouwen!</span>
-              <span>💜</span>
+          {/* Chatinvoer */}
+          <div className="bg-white border-t border-gray-200 p-4">
+            <div className="flex space-x-3">
+              <input
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                className="flex-1 rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:ring-1 text-sm transition-all duration-200"
+                placeholder="Stel je vraag aan je AI-docent..."
+                disabled={isLoading || !hasChatStarted}
+              />
+              <button 
+                onClick={handleSendMessage}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 font-medium transition-all duration-200 shadow-md hover:shadow-lg disabled:cursor-not-allowed"
+                disabled={isLoading || !hasChatStarted}
+              >
+                <div className="flex items-center space-x-2">
+                  {isLoading ? (
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  )}
+                  <span className="hidden sm:inline">{isLoading ? 'Versturen...' : 'Verstuur'}</span>
+                </div>
+              </button>
             </div>
-            <p className="text-gray-500 text-sm mt-2">
-              Vibe Coding Template door Tom Naberink • Powered by Bolt, Next.js & Gemini AI
-            </p>
           </div>
         </div>
-      </div>
+      </main>
     </div>
-  )
+  );
 }
