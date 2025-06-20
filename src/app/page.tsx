@@ -65,6 +65,9 @@ export default function Home() {
   const [isFileUploading, setIsFileUploading] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isSharing, setIsSharing] = useState(false);
+  const [sharedLink, setSharedLink] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const handleRoleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedRoleName = event.target.value;
@@ -274,9 +277,49 @@ export default function Home() {
     setSuggestions([]); // Verberg suggesties na keuze
   };
 
+  const handleShare = async () => {
+    if (!hasChatStarted) {
+      alert("Start eerst een chat om de configuratie te testen voordat je deelt.");
+      return;
+    }
+    setIsSharing(true);
+    setSharedLink('');
+    setCopied(false);
+
+    try {
+      const response = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vakkennis, vakdidaktiek, pedagogiek }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Kon de chatbot niet delen');
+      }
+
+      const { id } = await response.json();
+      const link = `${window.location.origin}/chat/${id}`;
+      setSharedLink(link);
+
+    } catch (error) {
+      console.error('Fout bij het delen van de chatbot:', error);
+      alert(`Het is niet gelukt om de chatbot te delen: ${error instanceof Error ? error.message : 'Onbekende fout'}`);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+  
+  const handleCopyLink = () => {
+    if (!sharedLink) return;
+    navigator.clipboard.writeText(sharedLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500); // Reset "Gekopieerd!" na 2.5 seconden
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
-      {/* Header */}
+        {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -288,7 +331,7 @@ export default function Home() {
                 <h1 className="text-xl font-bold text-gray-900">Voor Docenten</h1>
                 <p className="text-sm text-gray-500">Custom Chatbot Generator</p>
               </div>
-            </div>
+          </div>
             <div className="hidden md:flex items-center space-x-6">
               <span className="text-sm text-gray-600">Waar onderwijspassie en AI-expertise samenkomen</span>
             </div>
@@ -416,7 +459,7 @@ export default function Home() {
                 className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 text-sm resize-none transition-all duration-200"
                 placeholder="Beschrijf je didactische aanpak..."
               />
-            </div>
+              </div>
 
             {/* Pedagogiek Sectie */}
             <div className="space-y-3">
@@ -445,6 +488,56 @@ export default function Home() {
                 className="w-full rounded-xl border-gray-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 focus:ring-1 text-sm resize-none transition-all duration-200"
                 placeholder="Beschrijf je pedagogische stijl..."
               />
+              </div>
+
+            {/* Deel Sectie */}
+            <div className="mt-auto pt-6 border-t border-gray-200">
+               <h3 className="text-lg font-semibold text-gray-800 mb-3">Deel je Chatbot</h3>
+               <p className="text-sm text-gray-600 mb-4">
+                {hasChatStarted 
+                  ? "Genereer een unieke link om deze chatbot-configuratie te delen met studenten."
+                  : "Start eerst een chat in de rechterkolom om de deelfunctie te activeren."
+                }
+               </p>
+               <button
+                  onClick={handleShare}
+                  className="w-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white px-4 py-3 rounded-xl hover:from-teal-600 hover:to-cyan-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed font-medium text-sm transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                  disabled={!hasChatStarted || isSharing}
+                >
+                  {isSharing ? (
+                     <>
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Link genereren...</span>
+                     </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                      </svg>
+                      <span>Deelbare Link Maken</span>
+                    </>
+                  )}
+               </button>
+
+               {sharedLink && (
+                <div className="mt-4">
+                  <label className="text-xs font-semibold text-gray-700 uppercase">Deelbare Link:</label>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <input
+                      type="text"
+                      readOnly
+                      value={sharedLink}
+                      className="flex-1 bg-gray-100 border-gray-200 rounded-lg p-2 text-xs text-gray-700"
+                    />
+                    <button onClick={handleCopyLink} className="bg-gray-200 text-gray-800 px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-300 transition-colors">
+                      {copied ? 'Gekopieerd!' : 'Kopieer'}
+                    </button>
+                  </div>
+                </div>
+               )}
             </div>
           </div>
         </div>
@@ -454,8 +547,8 @@ export default function Home() {
           <div className="bg-white border-b border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-1">AI Docent Chat</h2>
             <p className="text-sm text-gray-600">Je persoonlijke onderwijsassistent</p>
-          </div>
-          
+              </div>
+
           {/* Chatberichten */}
           <div className="flex-1 p-6 overflow-y-auto">
             {!hasChatStarted ? (
@@ -489,7 +582,7 @@ export default function Home() {
                         <span>Start Chat</span>
                       </>
                     )}
-                  </div>
+              </div>
                 </button>
               </div>
             ) : (
@@ -502,8 +595,8 @@ export default function Home() {
                         : 'bg-white text-gray-800 rounded-2xl rounded-bl-md shadow-sm border border-gray-100'
                     } px-4 py-3`}>
                       <div className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</div>
-                    </div>
-                  </div>
+                </div>
+              </div>
                 ))}
               </div>
             )}
