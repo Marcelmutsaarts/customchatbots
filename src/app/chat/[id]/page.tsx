@@ -2,8 +2,9 @@ import { kv } from '@vercel/kv';
 import { notFound } from 'next/navigation';
 import ChatClient from './ChatClient';
 
-type PageProps = {
+type Props = {
   params: { id: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
 };
 
 type ChatConfig = {
@@ -22,7 +23,7 @@ async function getChatConfig(id: string): Promise<ChatConfig | null> {
   }
 }
 
-export default async function SharedChatPage({ params }: PageProps) {
+export default async function SharedChatPage({ params }: Props) {
   const config = await getChatConfig(params.id);
 
   if (!config) {
