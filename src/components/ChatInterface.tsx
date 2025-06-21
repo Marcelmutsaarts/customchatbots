@@ -155,8 +155,8 @@ Beantwoord de volgende vraag volgens deze configuratie:`
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Klaar om te beginnen?</h3>
             <p className="text-gray-600 mb-6 leading-relaxed">
-              {config.naam || 'Je AI-assistent'} staat klaar om je te helpen met {config.vakkennis.split('.')[0].toLowerCase()}. 
-              Start het gesprek voor een persoonlijke introductie!
+              {config.naam || 'Je AI-assistent'} staat klaar om je te helpen! 
+              Klik op de knop om een gesprek te starten en ontdek hoe ik je kan ondersteunen.
             </p>
             <button 
               onClick={handleStartChat}
