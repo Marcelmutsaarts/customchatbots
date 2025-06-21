@@ -314,6 +314,15 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2500); // Reset "Gekopieerd!" na 2.5 seconden
   };
 
+  const missingFields = (() => {
+    const missing = [];
+    if (!naam) missing.push('Naam');
+    if (!vakkennis) missing.push('Vakkennis');
+    if (!didactischeRol) missing.push('Didactische Rol');
+    if (!pedagogischeStijl) missing.push('Pedagogische Stijl');
+    return missing;
+  })();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
         {/* Header */}
@@ -496,7 +505,7 @@ export default function Home() {
                <button
                   onClick={handleShare}
                   className="w-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white px-4 py-3 rounded-xl hover:from-teal-600 hover:to-cyan-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed font-medium text-sm transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
-                  disabled={isSharing || !naam || !vakkennis || !didactischeRol || !pedagogischeStijl}
+                  disabled={isSharing || missingFields.length > 0}
                 >
                   {isSharing ? (
                      <>
@@ -515,6 +524,14 @@ export default function Home() {
                     </>
                   )}
                </button>
+
+                {missingFields.length > 0 && (
+                  <div className="mt-3 text-center">
+                    <p className="text-xs font-semibold text-red-600">
+                      Nog vereist: {missingFields.join(', ')}
+                    </p>
+                  </div>
+                )}
 
                {sharedLink && (
                 <div className="mt-4">
