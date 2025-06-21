@@ -491,15 +491,12 @@ export default function Home() {
             <div className="mt-auto pt-6 border-t border-gray-200">
                <h3 className="text-lg font-semibold text-gray-800 mb-3">Deel je Chatbot</h3>
                <p className="text-sm text-gray-600 mb-4">
-                {hasChatStarted 
-                  ? "Genereer een unieke link om deze chatbot-configuratie te delen met studenten."
-                  : "Start eerst een chat in de rechterkolom om de deelfunctie te activeren."
-                }
+                Genereer een unieke link om deze chatbot-configuratie te delen met studenten.
                </p>
                <button
                   onClick={handleShare}
                   className="w-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white px-4 py-3 rounded-xl hover:from-teal-600 hover:to-cyan-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed font-medium text-sm transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
-                  disabled={!hasChatStarted || isSharing}
+                  disabled={isSharing || !naam || !vakkennis || !didactischeRol || !pedagogischeStijl}
                 >
                   {isSharing ? (
                      <>
