@@ -1,49 +1,22 @@
 // @ts-nocheck
 import { notFound } from 'next/navigation'
 import ChatInterface from '@/components/ChatInterface'
+import { getChatConfigFromKV } from '@/lib/kv-data'
 
 type Props = {
-  params: Promise<{ id: string }>
-}
-
-async function getChatConfig(id: string) {
-  try {
-    // In server-side rendering, gebruik een absolute URL voor fetch
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000'
-    
-    console.log(`Fetching config from: ${baseUrl}/api/chat/${id}`)
-    
-    const response = await fetch(`${baseUrl}/api/chat/${id}`, {
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    })
-    
-    if (!response.ok) {
-      console.error(`Failed to fetch config for ID ${id}: ${response.status} ${response.statusText}`)
-      return null
-    }
-    
-    const config = await response.json()
-    console.log(`Config fetched successfully for ID ${id}:`, config)
-    return config
-  } catch (error) {
-    console.error('Error fetching chat config:', error)
-    return null
-  }
+  // De 'params' prop in de App Router is een object, geen Promise.
+  params: { id: string }
 }
 
 export default async function SharedChatPage({ params }: Props) {
-  const { id } = await params
-  console.log(`SharedChatPage rendering for ID: ${id}`)
+  const { id } = params
+  console.log(`SharedChatPage wordt gerenderd voor ID: ${id}`)
   
-  const config = await getChatConfig(id)
+  // Roep de data direct aan via de gecentraliseerde functie, geen onbetrouwbare fetch meer.
+  const config = await getChatConfigFromKV(id)
   
   if (!config) {
-    console.log(`No config found for ID ${id}, showing 404`)
+    console.log(`Geen configuratie gevonden voor ID ${id}, toon 404 pagina.`)
     notFound()
   }
 
