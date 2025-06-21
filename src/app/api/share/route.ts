@@ -1,44 +1,45 @@
 import { kv } from '@vercel/kv';
+import { nanoid } from 'nanoid';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Helper functie om een unieke ID te genereren
-function generateId(length = 8) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
+// Genereer een kortere, URL-vriendelijke ID
+const generateId = () => nanoid(8);
 
 export async function POST(request: NextRequest) {
   try {
-    const { vakkennis, vakdidaktiek, pedagogiek } = await request.json();
+    const body = await request.json();
+    console.log('[API/SHARE] Request body ontvangen:', body);
+
+    const { naam, vakkennis, didactischeRol, pedagogischeStijl } = body;
 
     // Valideer de input
-    if (!vakkennis || !vakdidaktiek || !pedagogiek) {
-      return NextResponse.json({ error: 'Alle drie de velden (vakkennis, vakdidaktiek, pedagogiek) zijn vereist.' }, { status: 400 });
+    if (!naam || !vakkennis || !didactischeRol || !pedagogischeStijl) {
+      console.error('[API/SHARE] Validatie mislukt: ontbrekende velden.');
+      return NextResponse.json({ error: 'Alle velden zijn vereist.' }, { status: 400 });
     }
 
     // Genereer een unieke ID
     const id = generateId();
+    console.log(`[API/SHARE] Nieuwe ID gegenereerd: ${id}`);
 
     // Definieer de configuratie
     const configuration = {
+      naam,
       vakkennis,
-      vakdidaktiek,
-      pedagogiek,
+      didactischeRol,
+      pedagogischeStijl,
     };
 
     // Sla de configuratie op in Vercel KV
-    // De key is `chat:ID`, wat een goede practice is om keys te groeperen.
+    console.log(`[API/SHARE] Bezig met opslaan van configuratie voor key: chat:${id}`);
     await kv.set(`chat:${id}`, configuration);
+    console.log(`[API/SHARE] Configuratie succesvol opgeslagen voor key: chat:${id}`);
 
     // Stuur de gegenereerde ID terug naar de client
     return NextResponse.json({ id });
 
   } catch (error) {
-    console.error('Fout bij het opslaan van de configuratie:', error);
+    console.error('[API/SHARE] Onverwachte fout opgetreden:', error);
     const errorMessage = error instanceof Error ? error.message : 'Onbekende fout';
     return NextResponse.json({ error: 'Kon de configuratie niet opslaan.', details: errorMessage }, { status: 500 });
   }
