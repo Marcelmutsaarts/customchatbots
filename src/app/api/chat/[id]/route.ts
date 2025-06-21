@@ -1,9 +1,18 @@
 import { getChatConfigFromKV } from '@/lib/kv-data'
 import { NextRequest, NextResponse } from 'next/server'
 
+// Definieer het correcte type voor de context van de route handler,
+// die de 'params' met de dynamische segmenten bevat.
+type RouteContext = {
+  params: {
+    id: string
+  }
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  // Gebruik het correct gedefinieerde type voor de tweede parameter.
+  { params }: RouteContext
 ) {
   try {
     const { id } = params
@@ -13,6 +22,7 @@ export async function GET(
       return NextResponse.json({ error: 'ID is required' }, { status: 400 })
     }
 
+    // Gebruik de gecentraliseerde, directe data-ophalingsfunctie.
     const config = await getChatConfigFromKV(id)
     
     if (!config) {
