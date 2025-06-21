@@ -3,13 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   request: NextRequest,
-  // De Next.js build-tooling vereist een inline type-definitie
-  // voor de context en accepteert hier geen custom type-alias.
-  // Dit is de correcte, door de documentatie voorgeschreven, notatie.
-  { params }: { params: { id: string } }
-) {
+  context: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   try {
-    const { id } = params
+    const { id } = await context.params
     
     if (!id) {
       console.error('[API/GET] Geen ID meegegeven in verzoek.')
@@ -25,8 +22,7 @@ export async function GET(
 
     return NextResponse.json(config)
   } catch (error) {
-    const errorId = params?.id || 'onbekend'
-    console.error(`[API/GET] Onverwachte fout opgetreden voor ID: ${errorId}`, error)
+    console.error(`[API/GET] Onverwachte fout opgetreden`, error)
     return NextResponse.json(
       { error: 'Failed to fetch configuration' },
       { status: 500 }
