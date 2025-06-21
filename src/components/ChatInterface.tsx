@@ -53,25 +53,17 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
     const startMessage = "Stel jezelf voor aan de hand van de Vakkennis. Geef een kort en vriendelijk welkom en leg uit hoe je kunt helpen. Bijvoorbeeld: 'Welkom! Ik kan je helpen met [onderwerp]. Ik kan [wat je kan doen].'";
 
     try {
-      // Maak een system prompt met de chatbot configuratie
-      const systemPrompt = `Je bent ${config.naam || 'een AI-assistent'}.
-
-Vakkennis: ${config.vakkennis}
-
-Didactische rol: ${config.didactischeRol}
-
-Pedagogische stijl: ${config.pedagogischeStijl}
-
-${startMessage}`
-
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: systemPrompt,
-          aiModel: 'smart'
+          message: startMessage,
+          aiModel: 'smart',
+          vakkennis: config.vakkennis,
+          didactischeRol: config.didactischeRol,
+          pedagogischeStijl: config.pedagogischeStijl
         }),
       })
 
@@ -99,25 +91,17 @@ ${startMessage}`
     setIsLoading(true)
 
     try {
-      // Maak een system prompt met de chatbot configuratie
-      const systemPrompt = `Je bent ${config.naam || 'een AI-assistent'}.
-
-Vakkennis: ${config.vakkennis}
-
-Didactische rol: ${config.didactischeRol}
-
-Pedagogische stijl: ${config.pedagogischeStijl}
-
-Beantwoord de volgende vraag volgens deze configuratie:`
-
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: `${systemPrompt}\n\nVraag: ${userMessage}`,
-          aiModel: 'smart'
+          message: userMessage,
+          aiModel: 'smart',
+          vakkennis: config.vakkennis,
+          didactischeRol: config.didactischeRol,
+          pedagogischeStijl: config.pedagogischeStijl
         }),
       })
 

@@ -34,7 +34,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('Received request body:', body)
     
-    const { message, image, images, useGrounding = true, aiModel = 'smart' } = body
+    const { 
+      message, 
+      image, 
+      images, 
+      useGrounding = true, 
+      aiModel = 'smart',
+      vakkennis,
+      didactischeRol,
+      pedagogischeStijl
+    } = body
 
     if (!message) {
       return NextResponse.json(
@@ -55,7 +64,24 @@ export async function POST(request: NextRequest) {
     const modelName = aiModel === 'pro' ? 'gemini-2.5-pro-preview-06-05' :
                      aiModel === 'smart' ? 'gemini-2.5-flash-preview-05-20' :
                      'gemini-2.0-flash-exp' // internet
-    const model = genAI.getGenerativeModel({ model: modelName })
+
+    // Bouw de system instruction - net zoals in chat-stream API
+    const systemInstruction = `
+      Je bent een expert in het Nederlandse onderwijs. Gebruik de volgende context om de vragen van de gebruiker te beantwoorden:
+      
+      Vakkennis: ${vakkennis || 'Geen specifieke vakkennis opgegeven.'}
+      
+      Didactische rol: ${didactischeRol || 'Geen specifieke didactische rol opgegeven.'}
+      
+      Pedagogische stijl: ${pedagogischeStijl || 'Geen specifieke pedagogische stijl opgegeven.'}
+
+      Antwoord altijd kort en bondig, tenzij de gebruiker expliciet om details vraagt.
+    `;
+
+    const model = genAI.getGenerativeModel({ 
+      model: modelName,
+      systemInstruction: systemInstruction,
+    })
 
     // Configureer tools array - grounding alleen voor Gemini 2.0 (internet model)
     const tools = (aiModel === 'internet' && useGrounding) ? [googleSearchTool] : []
