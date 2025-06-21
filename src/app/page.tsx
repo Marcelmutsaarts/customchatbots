@@ -54,9 +54,10 @@ const pedagogicalRoles = [
 ];
 
 export default function Home() {
+  const [naam, setNaam] = useState('');
   const [vakkennis, setVakkennis] = useState('');
-  const [vakdidaktiek, setVakdidaktiek] = useState('');
-  const [pedagogiek, setPedagogiek] = useState('');
+  const [didactischeRol, setDidactischeRol] = useState('');
+  const [pedagogischeStijl, setPedagogischeStijl] = useState('');
 
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [userInput, setUserInput] = useState('');
@@ -72,13 +73,13 @@ export default function Home() {
   const handleRoleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedRoleName = event.target.value;
     const role = didacticRoles.find(r => r.name === selectedRoleName);
-    setVakdidaktiek(role ? role.description : '');
+    setDidactischeRol(role ? role.description : '');
   };
 
   const handlePedagogyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedStyleName = event.target.value;
     const style = pedagogicalRoles.find(s => s.name === selectedStyleName);
-    setPedagogiek(style ? style.description : '');
+    setPedagogischeStijl(style ? style.description : '');
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,8 +125,8 @@ export default function Home() {
         body: JSON.stringify({ 
           message: startMessage,
           vakkennis: vakkennis,
-          vakdidaktiek: vakdidaktiek,
-          pedagogiek: pedagogiek,
+          didactischeRol: didactischeRol,
+          pedagogischeStijl: pedagogischeStijl,
           aiModel: 'smart'
         }),
       });
@@ -187,8 +188,8 @@ export default function Home() {
         body: JSON.stringify({ 
           message: userInput,
           vakkennis: vakkennis,
-          vakdidaktiek: vakdidaktiek,
-          pedagogiek: pedagogiek,
+          didactischeRol: didactischeRol,
+          pedagogischeStijl: pedagogischeStijl,
           aiModel: 'smart' // of een ander model naar keuze
         }),
       });
@@ -264,46 +265,42 @@ export default function Home() {
   };
 
   const handleSuggestionClick = (suggestion: Suggestion) => {
-    const didactischObject = didacticRoles.find(r => r.name === suggestion.didactischeRol);
-    if (didactischObject) {
-      setVakdidaktiek(didactischObject.description);
-    }
+    const role = didacticRoles.find(r => r.name === suggestion.didactischeRol);
+    const style = pedagogicalRoles.find(s => s.name === suggestion.pedagogischeStijl);
 
-    const pedagogischObject = pedagogicalRoles.find(p => p.name === suggestion.pedagogischeStijl);
-    if (pedagogischObject) {
-      setPedagogiek(pedagogischObject.description);
-    }
-    
-    setSuggestions([]); // Verberg suggesties na keuze
+    if (role) setDidactischeRol(role.description);
+    if (style) setPedagogischeStijl(style.description);
+
+    setSuggestions([]); // Clear suggestions after selection
   };
 
   const handleShare = async () => {
-    if (!hasChatStarted) {
-      alert("Start eerst een chat om de configuratie te testen voordat je deelt.");
-      return;
-    }
     setIsSharing(true);
     setSharedLink('');
-    setCopied(false);
-
     try {
       const response = await fetch('/api/share', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vakkennis, vakdidaktiek, pedagogiek }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          naam,
+          vakkennis,
+          didactischeRol,
+          pedagogischeStijl,
+        }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kon de chatbot niet delen');
+        throw new Error(errorData.error || 'Het is niet gelukt om de chatbot te delen.');
       }
 
-      const { id } = await response.json();
-      const link = `${window.location.origin}/chat/${id}`;
+      const data = await response.json();
+      const link = `${window.location.origin}/chat/${data.id}`;
       setSharedLink(link);
-
+      setCopied(false);
     } catch (error) {
-      console.error('Fout bij het delen van de chatbot:', error);
       alert(`Het is niet gelukt om de chatbot te delen: ${error instanceof Error ? error.message : 'Onbekende fout'}`);
     } finally {
       setIsSharing(false);
@@ -453,8 +450,8 @@ export default function Home() {
               </select>
               <textarea
                 id="vakdidaktiek"
-                value={vakdidaktiek}
-                onChange={(e) => setVakdidaktiek(e.target.value)}
+                value={didactischeRol}
+                onChange={(e) => setDidactischeRol(e.target.value)}
                 rows={4}
                 className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 text-sm resize-none transition-all duration-200"
                 placeholder="Beschrijf je didactische aanpak..."
@@ -482,8 +479,8 @@ export default function Home() {
               </select>
               <textarea
                 id="pedagogiek"
-                value={pedagogiek}
-                onChange={(e) => setPedagogiek(e.target.value)}
+                value={pedagogischeStijl}
+                onChange={(e) => setPedagogischeStijl(e.target.value)}
                 rows={4}
                 className="w-full rounded-xl border-gray-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 focus:ring-1 text-sm resize-none transition-all duration-200"
                 placeholder="Beschrijf je pedagogische stijl..."
