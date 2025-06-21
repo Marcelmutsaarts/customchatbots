@@ -8,15 +8,28 @@ type Props = {
 
 async function getChatConfig(id: string) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/chat/${id}`, {
-      cache: 'no-store'
+    // In server-side rendering, gebruik een absolute URL voor fetch
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000'
+    
+    console.log(`Fetching config from: ${baseUrl}/api/chat/${id}`)
+    
+    const response = await fetch(`${baseUrl}/api/chat/${id}`, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      }
     })
     
     if (!response.ok) {
+      console.error(`Failed to fetch config for ID ${id}: ${response.status} ${response.statusText}`)
       return null
     }
     
-    return await response.json()
+    const config = await response.json()
+    console.log(`Config fetched successfully for ID ${id}:`, config)
+    return config
   } catch (error) {
     console.error('Error fetching chat config:', error)
     return null
@@ -25,10 +38,12 @@ async function getChatConfig(id: string) {
 
 export default async function SharedChatPage({ params }: Props) {
   const { id } = await params
+  console.log(`SharedChatPage rendering for ID: ${id}`)
   
   const config = await getChatConfig(id)
   
   if (!config) {
+    console.log(`No config found for ID ${id}, showing 404`)
     notFound()
   }
 
