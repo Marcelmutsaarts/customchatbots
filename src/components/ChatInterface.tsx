@@ -52,14 +52,25 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
     setIsLoading(true)
 
     try {
+      // Maak een system prompt met de chatbot configuratie
+      const systemPrompt = `Je bent ${config.naam || 'een AI-assistent'}.
+
+Vakkennis: ${config.vakkennis}
+
+Didactische rol: ${config.didactischeRol}
+
+Pedagogische stijl: ${config.pedagogischeStijl}
+
+Beantwoord de volgende vraag volgens deze configuratie:`
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: userMessage,
-          config: config
+          message: `${systemPrompt}\n\nVraag: ${userMessage}`,
+          aiModel: 'smart'
         }),
       })
 
