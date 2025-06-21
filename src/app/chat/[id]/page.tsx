@@ -4,12 +4,12 @@ import ChatInterface from '@/components/ChatInterface'
 import { getChatConfigFromKV } from '@/lib/kv-data'
 
 type Props = {
-  // De 'params' prop in de App Router is een object, geen Promise.
-  params: { id: string }
+  // In Next.js 15 zijn params een Promise geworden
+  params: Promise<{ id: string }>
 }
 
 export default async function SharedChatPage({ params }: Props) {
-  const { id } = params
+  const { id } = await params
   console.log(`SharedChatPage wordt gerenderd voor ID: ${id}`)
   
   // Roep de data direct aan via de gecentraliseerde functie, geen onbetrouwbare fetch meer.
