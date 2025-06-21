@@ -354,6 +354,24 @@ export default function Home() {
           </div>
           
           <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+            {/* Naam Sectie */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                <label htmlFor="naam" className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+                  Naam van de Chatbot
+                </label>
+              </div>
+              <input
+                type="text"
+                id="naam"
+                value={naam}
+                onChange={(e) => setNaam(e.target.value)}
+                className="w-full rounded-xl border-gray-200 shadow-sm focus:border-green-500 focus:ring-green-500 focus:ring-1 text-sm transition-all duration-200"
+                placeholder="Bijv. 'AI Geschiedenis Helper'"
+              />
+            </div>
+
             {/* Vakkennis Sectie */}
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
