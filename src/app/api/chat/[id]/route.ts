@@ -1,18 +1,12 @@
 import { getChatConfigFromKV } from '@/lib/kv-data'
 import { NextRequest, NextResponse } from 'next/server'
 
-// Definieer het correcte type voor de context van de route handler,
-// die de 'params' met de dynamische segmenten bevat.
-type RouteContext = {
-  params: {
-    id: string
-  }
-}
-
 export async function GET(
   request: NextRequest,
-  // Gebruik het correct gedefinieerde type voor de tweede parameter.
-  { params }: RouteContext
+  // De Next.js build-tooling vereist een inline type-definitie
+  // voor de context en accepteert hier geen custom type-alias.
+  // Dit is de correcte, door de documentatie voorgeschreven, notatie.
+  { params }: { params: { id: string } }
 ) {
   try {
     const { id } = params
