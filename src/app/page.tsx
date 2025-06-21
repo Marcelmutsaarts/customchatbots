@@ -182,11 +182,24 @@ export default function Home() {
     setUserInput('');
 
     try {
+      // Bouw conversatiegeschiedenis op in het juiste formaat voor Gemini
+      const conversationHistory = chatHistory.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }]
+      }))
+
+      // Voeg het nieuwe bericht toe
+      conversationHistory.push({
+        role: 'user',
+        parts: [{ text: userInput }]
+      })
+
       const response = await fetch('/api/chat-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: userInput,
+          conversationHistory: conversationHistory, // Voeg conversatiegeschiedenis toe
           vakkennis: vakkennis,
           didactischeRol: didactischeRol,
           pedagogischeStijl: pedagogischeStijl,

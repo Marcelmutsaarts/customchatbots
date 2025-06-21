@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       images, 
       useGrounding = true, 
       aiModel = 'smart',
+      conversationHistory,
       vakkennis,
       didactischeRol,
       pedagogischeStijl
@@ -116,8 +117,13 @@ export async function POST(request: NextRequest) {
         }
       })
       
+      // Gebruik conversatiegeschiedenis als beschikbaar, anders fallback naar enkele message
+      const contents = conversationHistory && conversationHistory.length > 0 
+        ? conversationHistory 
+        : [{ role: 'user', parts: [{ text: message }, ...imageParts] }]
+      
       result = await generateWithFallback({
-        contents: [{ role: 'user', parts: [{ text: message }, ...imageParts] }],
+        contents: contents,
         tools: tools
       })
     } else if (image) {
@@ -131,14 +137,23 @@ export async function POST(request: NextRequest) {
         }
       }
       
+      // Gebruik conversatiegeschiedenis als beschikbaar, anders fallback naar enkele message
+      const contents = conversationHistory && conversationHistory.length > 0 
+        ? conversationHistory 
+        : [{ role: 'user', parts: [{ text: message }, imagePart] }]
+      
       result = await generateWithFallback({
-        contents: [{ role: 'user', parts: [{ text: message }, imagePart] }],
+        contents: contents,
         tools: tools
       })
     } else {
-      // Alleen tekst
+      // Alleen tekst - gebruik conversatiegeschiedenis als beschikbaar
+      const contents = conversationHistory && conversationHistory.length > 0 
+        ? conversationHistory 
+        : [{ role: 'user', parts: [{ text: message }] }]
+      
       result = await generateWithFallback({
-        contents: [{ role: 'user', parts: [{ text: message }] }],
+        contents: contents,
         tools: tools
       })
     }

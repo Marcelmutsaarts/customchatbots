@@ -91,6 +91,18 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
     setIsLoading(true)
 
     try {
+      // Bouw conversatiegeschiedenis op in het juiste formaat voor Gemini
+      const conversationHistory = messages.map(msg => ({
+        role: msg.isUser ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      }))
+
+      // Voeg het nieuwe bericht toe
+      conversationHistory.push({
+        role: 'user',
+        parts: [{ text: userMessage }]
+      })
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -98,6 +110,7 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
         },
         body: JSON.stringify({
           message: userMessage,
+          conversationHistory: conversationHistory, // Voeg conversatiegeschiedenis toe
           aiModel: 'smart',
           vakkennis: config.vakkennis,
           didactischeRol: config.didactischeRol,

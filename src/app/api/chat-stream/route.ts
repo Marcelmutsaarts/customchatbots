@@ -40,9 +40,10 @@ export async function POST(request: NextRequest) {
       images, 
       useGrounding = true, 
       aiModel = 'smart',
+      conversationHistory,
       vakkennis,
-      vakdidaktiek,
-      pedagogiek 
+      didactischeRol,
+      pedagogischeStijl 
     } = body
 
     if (!message) {
@@ -71,9 +72,9 @@ export async function POST(request: NextRequest) {
       
       Vakkennis: ${vakkennis || 'Geen specifieke vakkennis opgegeven.'}
       
-      Vakdidaktiek: ${vakdidaktiek || 'Geen specifieke vakdidaktiek opgegeven.'}
+      Didactische rol: ${didactischeRol || 'Geen specifieke didactische rol opgegeven.'}
       
-      Pedagogiek: ${pedagogiek || 'Geen specifieke pedagogiek opgegeven.'}
+      Pedagogische stijl: ${pedagogischeStijl || 'Geen specifieke pedagogische stijl opgegeven.'}
 
       Antwoord altijd kort en bondig, tenzij de gebruiker expliciet om details vraagt.
     `;
@@ -120,8 +121,13 @@ export async function POST(request: NextRequest) {
               }
             })
             
+            // Gebruik conversatiegeschiedenis als beschikbaar, anders fallback naar enkele message
+            const contents = conversationHistory && conversationHistory.length > 0 
+              ? conversationHistory 
+              : [{ role: 'user', parts: [{ text: message }, ...imageParts] }]
+            
             result = await generateStreamWithFallback({
-              contents: [{ role: 'user', parts: [{ text: message }, ...imageParts] }],
+              contents: contents,
               tools: tools
             })
           } else if (image) {
@@ -135,14 +141,23 @@ export async function POST(request: NextRequest) {
               }
             }
             
+            // Gebruik conversatiegeschiedenis als beschikbaar, anders fallback naar enkele message
+            const contents = conversationHistory && conversationHistory.length > 0 
+              ? conversationHistory 
+              : [{ role: 'user', parts: [{ text: message }, imagePart] }]
+            
             result = await generateStreamWithFallback({
-              contents: [{ role: 'user', parts: [{ text: message }, imagePart] }],
+              contents: contents,
               tools: tools
             })
           } else {
-            // Text only
+            // Text only - gebruik conversatiegeschiedenis als beschikbaar
+            const contents = conversationHistory && conversationHistory.length > 0 
+              ? conversationHistory 
+              : [{ role: 'user', parts: [{ text: message }] }]
+            
             result = await generateStreamWithFallback({
-              contents: [{ role: 'user', parts: [{ text: message }] }],
+              contents: contents,
               tools: tools
             })
           }
